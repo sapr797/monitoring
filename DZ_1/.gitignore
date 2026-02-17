@@ -1,0 +1,5 @@
+# Ignore data directories
+**/data/
+*.db
+*.log
+.DS_Store
