@@ -1,0 +1,22 @@
+filebeat.inputs:
+- type: container
+  paths:
+    - '/var/lib/docker/containers/*/*.log'
+#  json.keys_under_root: true
+ # json.add_error_key: true
+ # json.overwrite_keys: true
+processors:
+    - add_docker_metadata:
+        host: "unix:///var/run/docker.sock"
+    - add_fields:
+        target: "@metadata"
+        fields:
+          beat: "filebeat"
+          version: "8.11.0"
+output.logstash:
+  hosts: ["logstash:5000"]
+
+logging.json: true
+logging.metrics.enabled: false
+logging.level: debug
+

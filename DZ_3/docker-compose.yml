@@ -1,0 +1,116 @@
+#version: '3.8'
+
+services:
+  # Hot node Elasticsearch (основная)
+  elasticsearch-hot:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch-hot
+    environment:
+      - node.name=elasticsearch-hot
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=elasticsearch-hot
+      - cluster.initial_master_nodes=elasticsearch-hot
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - xpack.security.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+      - network.host=0.0.0.0
+      - node.roles=master,data_hot,data_content
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-hot-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elk
+
+  # Warm node Elasticsearch
+#  elasticsearch-warm:
+ #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+  #  container_name: elasticsearch-warm
+   # environment:
+#      - node.name=elasticsearch-warm
+ #     - cluster.name=es-cluster
+#      - discovery.seed_hosts=elasticsearch-hot
+ #     - cluster.initial_master_nodes=elasticsearch-hot,elasticsearch-warm
+  #    - bootstrap.memory_lock=true
+#   - "ES_JAVA_OPTS=-Xms562m -Xmx256m"
+ #     - xpack.security.enabled=false
+ #     - xpack.security.transport.ssl.enabled=false
+ #     - network.host=0.0.0.0
+#      - node.roles=master,data_warm,data_content
+#    ulimits:
+ #     memlock:
+ #       soft: -1
+ #       hard: -1
+ #   volumes:
+#      - es-warm-data:/usr/share/elasticsearch/data
+#    networks:
+ #     - elk
+#    depends_on:
+ #     - elasticsearch-hot
+
+  # Logstash
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: logstash
+    volumes:
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - "5000:5000/tcp"
+      - "5000:5000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch-hot
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch-hot:9200
+      - XPACK_SECURITY_ENABLED=false
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch-hot
+
+  # Filebeat
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - elk
+    depends_on:
+      - logstash
+
+  dummy-app:
+   image: alpine:latest
+   container_name: dummy-app
+   command: /bin/sh -c "while true; do echo \"Random log $$(date) $$RANDOM\"; sleep 5; done"
+   restart: unless-stopped
+   networks:
+     - elk
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  es-hot-data:
+
