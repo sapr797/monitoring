@@ -11,10 +11,10 @@
 - **Filebeat** — сбор логов Docker-контейнеров
 
 #### Скриншот `docker ps` через 5 минут после старта
-![docker ps](screenshots/docker-ps.png)
+рис.003+.png. рис.005+.png
 
 #### Скриншот интерфейса Kibana
-![Kibana Discover](screenshots/kibana-discover.png)
+![Kibana Discover](рис.008.png, рис.00.png,рис.011.png)
 
 ---
 
@@ -26,32 +26,32 @@
 
 2. **Просмотр логов в Discover**
    - Логи успешно отображаются в Kibana
-   - Доступен поиск по полям и содержимому
+   - Доступен поиск по полям и содержимому``
    - Изучены основные возможности фильтрации и анализа
 
 ---Команды для запуска и проверки
 Запуск стека
-bash
+
 cd ~/elk-stack
 docker compose up -d
 Проверка работающих контейнеров
-bash
+
 docker ps
 Проверка индексов в Elasticsearch
-bash
+
 curl http://localhost:9200/_cat/indices
 Просмотр логов Filebeat
-bash
+
 docker logs filebeat --tail 20
 Просмотр логов Logstash
-bash
+
 docker logs logstash --tail 30
 Проверка доступности Kibana
-bash
+
 curl -I http://localhost:5601
 Результаты работы
 Созданные индексы в Elasticsearch
-text
+
 yellow open logstash-2026.03.30 1 1 55110 0 78.5mb
 Доступные сервисы
 Kibana: http://84.252.130.220:5601
@@ -80,7 +80,6 @@ dummy-app (дополнительный)
 Проблема: config file must be owned by root
 Решение:
 
-bash
 sudo chown root:root filebeat/filebeat.yml
 sudo chmod 644 filebeat/filebeat.yml
 2. Нехватка памяти Elasticsearch
@@ -110,15 +109,15 @@ Kibana позволяет просматривать и анализироват
 
 Дополнительные команды
 Остановка всех сервисов
-bash
+
 docker compose down
 Просмотр логов всех сервисов в реальном времени
-bash
+
 docker compose logs -f
 Создание резервной копии конфигурации
-bash
+
 tar -czf elk-backup-$(date +%Y%m%d).tar.gz docker-compose.yml filebeat/ logstash/
 Очистка старых индексов (старше 7 дней)
-bash
+
 curl -X DELETE "http://localhost:9200/logstash-$(date -d '7 days ago' +%Y.%m.%d)*"
 
